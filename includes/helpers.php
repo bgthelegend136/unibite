@@ -63,13 +63,21 @@ function apply_rating_timeouts(int $user_id): void {
     foreach ($rows as $row) {
         try {
             $pdo->beginTransaction();
+            $stmt = $pdo->prepare("SELECT points FROM users WHERE id = :uid FOR UPDATE");
+            $stmt->execute([':uid' => $user_id]);
+            $points = (int)$stmt->fetchColumn();
+            $delta  = $points > 0 ? -1 : 0;
+
             $pdo->prepare("
                 INSERT INTO point_events (user_id, request_id, delta, reason)
-                VALUES (:uid, :rid, -1, 'rating_timeout')
-            ")->execute([':uid' => $user_id, ':rid' => $row['request_id']]);
-            $pdo->prepare("
-                UPDATE users SET points = points - 1 WHERE id = :uid
-            ")->execute([':uid' => $user_id]);
+                VALUES (:uid, :rid, :delta, 'rating_timeout')
+            ")->execute([':uid' => $user_id, ':rid' => $row['request_id'], ':delta' => $delta]);
+
+            if ($delta !== 0) {
+                $pdo->prepare("
+                    UPDATE users SET points = points - 1 WHERE id = :uid AND points > 0
+                ")->execute([':uid' => $user_id]);
+            }
             $pdo->commit();
         } catch (PDOException $e) {
             $pdo->rollBack();
