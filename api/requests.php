@@ -616,18 +616,23 @@ function handle_noshow_request(): void
             json_response(false, null, 'Only approved requests can be marked no-show');
         }
 
-        $stmt = $pdo->prepare("
-            INSERT INTO point_events (user_id, request_id, delta, reason)
-            VALUES (?, ?, -1, 'no_show')
-        ");
-        $stmt->execute([(int)$row['consumer_id'], $request_id]);
+        $delta = (int)$row['consumer_points'] > 0 ? -1 : 0;
 
         $stmt = $pdo->prepare("
-            UPDATE users
-            SET points = points - 1
-            WHERE id = ?
+            INSERT INTO point_events (user_id, request_id, delta, reason)
+            VALUES (?, ?, ?, 'no_show')
         ");
-        $stmt->execute([(int)$row['consumer_id']]);
+        $stmt->execute([(int)$row['consumer_id'], $request_id, $delta]);
+
+        if ($delta !== 0) {
+            $stmt = $pdo->prepare("
+                UPDATE users
+                SET points = points - 1
+                WHERE id = ?
+                  AND points > 0
+            ");
+            $stmt->execute([(int)$row['consumer_id']]);
+        }
 
         $pdo->commit();
         json_response(true, [
