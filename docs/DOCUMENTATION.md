@@ -218,11 +218,19 @@ mysql -u root -e "CREATE DATABASE unibite"
 mysql -u root unibite < db/schema.sql
 mysql -u root unibite < db/seed.sql
 
-# 3. PHP dev server
+# 3. (Optional) load the demo scenario shown in the screenshots
+mysql -u root unibite < db/demo.sql
+
+# 4. PHP dev server
 php -S localhost:8000
 
-# 4. Visit http://localhost:8000  (alice@student.local / test123)
+# 5. Visit http://localhost:8000  (alice@student.local / test123)
 ```
+
+`db/seed.sql` only contains the EU-14 allergens and the three accounts
+(`admin`, `alice`, `bob`). `db/demo.sql` is optional and idempotent — it
+wipes user-content rows and re-inserts the exact listings, requests, and
+rating shown in [`docs/screenshots/`](screenshots/).
 
 Seed users:
 
