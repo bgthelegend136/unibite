@@ -33,10 +33,16 @@
   }
 
   function addListingMarker(map, listing, options = {}) {
-    const marker = L.marker([listing.pickup_lat, listing.pickup_lng]).addTo(map);
+    // Sold-out (inactive) listings stay on the map but faded, like the greyed-out cards.
+    const inactive = listing.listing_status === 'inactive';
+    const marker = L.marker([listing.pickup_lat, listing.pickup_lng], {
+      opacity: inactive ? 0.45 : 1,
+    }).addTo(map);
     const link = '/listing.php?id=' + listing.id;
     const label = '<div class="map-popup"><strong>' + escapeHtml(listing.title) + '</strong><br>' +
-      escapeHtml(listing.pickup_location) + '<br><a href="' + link + '">View details</a></div>';
+      escapeHtml(listing.pickup_location) + '<br>' +
+      (inactive ? '<em>Sold out</em><br>' : '') +
+      '<a href="' + link + '">View details</a></div>';
     marker.bindPopup(label);
     if (options.openPopup) marker.openPopup();
     return marker;
